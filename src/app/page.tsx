@@ -1,14 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Clock, X, FileArchive, BarChart3 } from 'lucide-react';
 
 export default function Home() {
     const [claimNo, setClaimNo] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const router = useRouter();
+
+    useEffect(() => {
+        const saved = localStorage.getItem('recentSearches');
+        if (saved) {
+            setRecentSearches(JSON.parse(saved));
+        }
+    }, []);
+
+    const addToHistory = (claim: string) => {
+        const updated = [claim, ...recentSearches.filter(s => s !== claim)].slice(0, 5);
+        setRecentSearches(updated);
+        localStorage.setItem('recentSearches', JSON.stringify(updated));
+    };
+
+    const removeFromHistory = (e: React.MouseEvent, claim: string) => {
+        e.stopPropagation();
+        const updated = recentSearches.filter(s => s !== claim);
+        setRecentSearches(updated);
+        localStorage.setItem('recentSearches', JSON.stringify(updated));
+    };
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,10 +43,10 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
+                addToHistory(claimNo);
                 router.push(`/claim/${encodeURIComponent(claimNo)}`);
             } else {
                 setError(data.error || 'Claim not valid');
-                // Shake animation could be added here via class manipulation if desired
             }
         } catch (err) {
             console.error(err);
@@ -43,9 +64,9 @@ export default function Home() {
 
             <div className="z-10 w-full max-w-md">
                 <div className="text-center mb-10">
-                    <h1 className="text-5xl font-bold text-white mb-2 tracking-tight">
-                        Claim<span className="text-blue-400">Search</span>
-                    </h1>
+                    <div className="flex justify-center mb-6">
+                        <img src="/logo.png" alt="Aspira Logo" className="h-24 object-contain" />
+                    </div>
                     <p className="text-gray-400">Locate and manage your insurance claims instantly.</p>
                 </div>
 
@@ -87,6 +108,52 @@ export default function Home() {
                             )}
                         </button>
                     </form>
+
+                    <div className="mt-8 pt-6 border-t border-white/10">
+                        <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
+                                <Clock className="h-4 w-4" />
+                                Recent Searches
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => router.push('/bulk')}
+                                    className="text-xs bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 px-3 py-1 rounded-lg transition-colors flex items-center gap-1"
+                                >
+                                    <FileArchive className="h-3 w-3" />
+                                    Bulk Mode
+                                </button>
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    className="text-xs bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 px-3 py-1 rounded-lg transition-colors flex items-center gap-1"
+                                >
+                                    <BarChart3 className="h-3 w-3" />
+                                    Analytics
+                                </button>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            {recentSearches.map((search) => (
+                                <div
+                                    key={search}
+                                    onClick={() => setClaimNo(search)}
+                                    className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
+                                >
+                                    <span className="text-gray-300 text-sm group-hover:text-white transition-colors">
+                                        {search}
+                                    </span>
+                                    <button
+                                        onClick={(e) => removeFromHistory(e, search)}
+                                        className="p-1 rounded-full hover:bg-white/10 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                 </div>
 
                 {error && (
