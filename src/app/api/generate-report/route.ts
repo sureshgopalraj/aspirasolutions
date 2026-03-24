@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
             hospitalstate: data.hospitalState,
             claimamount: data.claimAmount,
             amt: data.claimAmount,
+            amount: data.claimAmount,
             insured: data.insuredName,
             type: data.claimType,
             date: new Date().toLocaleDateString('en-IN'), // Current Date
